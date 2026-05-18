@@ -35,6 +35,12 @@ try:
 except Exception:
     HAS_WEASYPRINT = False
 
+try:
+    from fpdf import FPDF
+    HAS_FPDF = True
+except ImportError:
+    HAS_FPDF = False
+
 
 @router.get("", response_model=DocumentListResponse)
 def list_documents(
@@ -198,10 +204,62 @@ def download_document(doc_id: int, fmt: str = "docx",
         doc.export_format = "docx"
         db.commit()
         return FileResponse(filepath, filename=f"{doc.document_name}.docx")
-    elif fmt == "pdf" and HAS_WEASYPRINT:
+    elif fmt == "pdf" and (HAS_WEASYPRINT or HAS_FPDF):
         os.makedirs(settings.document_dir, exist_ok=True)
         filepath = os.path.join(settings.document_dir, f"{doc.document_name}_{doc.id}.pdf")
-        HTML(string=doc.content).write_pdf(filepath)
+        if HAS_WEASYPRINT:
+            HTML(string=doc.content).write_pdf(filepath)
+        else:
+            import re
+            # strip HTML tags for plain-text PDF
+            clean = re.sub(r'<[^>]+>', '', doc.content)
+            lines = clean.split('\n')
+            pdf = FPDF()
+            pdf.add_page()
+            # try to use a Chinese-capable font
+            import os.path as osp
+            font_paths = [
+                "C:/Windows/Fonts/msyh.ttc",
+                "C:/Windows/Fonts/simsun.ttc",
+                "C:/Windows/Fonts/msyh.ttf",
+                "C:/Windows/Fonts/simhei.ttf",
+            ]
+            cjk_font = None
+            for fp in font_paths:
+                if osp.exists(fp):
+                    cjk_font = fp
+                    break
+            if cjk_font:
+                pdf.add_font("CJK", "", cjk_font, uni=True)
+            line_height = 7
+            for line in lines:
+                pdf.set_x(10)
+                line = line.strip()
+                if not line:
+                    continue
+                if cjk_font:
+                    pdf.set_font("CJK", size=12)
+                else:
+                    pdf.set_font("Helvetica", size=12)
+                size = 12
+                if line.startswith('# '):
+                    size = 18
+                    text = line[2:]
+                elif line.startswith('## '):
+                    size = 15
+                    text = line[3:]
+                else:
+                    text = line
+                pdf.set_font_size(size)
+                try:
+                    pdf.multi_cell(0, line_height, text=text)
+                except Exception:
+                    # fallback: write char by char for problematic content
+                    pdf.set_x(10)
+                    pdf.set_font_size(10)
+                    safe = ''.join(c if ord(c) < 256 else '?' for c in text)
+                    pdf.multi_cell(0, line_height, text=safe)
+            pdf.output(filepath)
         doc.file_path = filepath
         doc.export_format = "pdf"
         db.commit()
@@ -209,8 +267,8 @@ def download_document(doc_id: int, fmt: str = "docx",
     elif fmt == "html":
         return {"content": doc.content}
     else:
-        if fmt == "pdf" and not HAS_WEASYPRINT:
-            raise HTTPException(status_code=503, detail="PDF 导出需要 WeasyPrint，当前环境未安装或加载失败")
+        if fmt == "pdf" and not HAS_WEASYPRINT and not HAS_FPDF:
+            raise HTTPException(status_code=503, detail="PDF 导出需要 WeasyPrint 或 fpdf2，当前环境未安装")
         raise HTTPException(status_code=400, detail=f"Unsupported format: {fmt}")
 
 

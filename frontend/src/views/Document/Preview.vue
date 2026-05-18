@@ -1,20 +1,20 @@
 <template>
   <div>
     <div v-loading="loading">
-      <div v-if="document">
-        <el-page-header @back="$router.push('/document')" :content="document.document_name" />
+      <div v-if="docInfo">
+        <el-page-header @back="$router.push('/document')" :content="docInfo.document_name" />
 
         <div class="action-bar">
           <span class="doc-meta">
             状态：
-            <el-tag :type="statusType(document.status)" size="small">
-              {{ statusLabel(document.status) }}
+            <el-tag :type="statusType(docInfo.status)" size="small">
+              {{ statusLabel(docInfo.status) }}
             </el-tag>
-            <span v-if="document.generate_time" style="margin-left: 16px; color: #909399">
-              生成时间：{{ document.generate_time }}
+            <span v-if="docInfo.generate_time" style="margin-left: 16px; color: #909399">
+              生成时间：{{ docInfo.generate_time }}
             </span>
           </span>
-          <div v-if="document.status === 'success'">
+          <div v-if="docInfo.status === 'success'">
             <el-button-group>
               <el-button type="primary" :loading="downloading" @click="handleDownload('docx')">
                 <el-icon><Download /></el-icon> 下载 DOCX
@@ -30,17 +30,17 @@
         </div>
 
         <el-alert
-          v-if="document.status === 'failed'"
-          :title="document.generate_message || '文档生成失败'"
+          v-if="docInfo.status === 'failed'"
+          :title="docInfo.generate_message || '文档生成失败'"
           type="error"
           show-icon
           style="margin-bottom: 16px"
         />
 
-        <el-card v-if="document.status === 'success' && sanitizedContent">
+        <el-card v-if="docInfo.status === 'success' && sanitizedContent">
           <div class="preview-content" v-html="sanitizedContent"></div>
         </el-card>
-        <el-empty v-else-if="document.status === 'success'" description="文档内容为空" />
+        <el-empty v-else-if="docInfo.status === 'success'" description="文档内容为空" />
       </div>
       <el-empty v-else description="文档不存在或加载失败" />
     </div>
@@ -56,7 +56,7 @@ import { Download } from '@element-plus/icons-vue'
 import type { Document } from '../../types'
 
 const route = useRoute()
-const document = ref<Document | null>(null)
+const docInfo = ref<Document | null>(null)
 const loading = ref(true)
 const downloading = ref(false)
 const rawContent = ref('')
@@ -78,12 +78,12 @@ function statusLabel(status: string) {
 
 function triggerDownload(blob: Blob, filename: string) {
   const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
+  const a = window.document.createElement('a')
   a.href = url
   a.download = filename
-  document.body.appendChild(a)
+  window.document.body.appendChild(a)
   a.click()
-  document.body.removeChild(a)
+  window.document.body.removeChild(a)
   window.URL.revokeObjectURL(url)
 }
 
@@ -91,7 +91,7 @@ async function handleDownload(fmt: string) {
   downloading.value = true
   try {
     const id = Number(route.params.id)
-    const docName = document.value?.document_name || 'document'
+    const docName = docInfo.value?.document_name || 'document'
     if (fmt === 'html') {
       const res = await downloadDocument(id, 'html')
       const blob = new Blob([res.data.content], { type: 'text/html;charset=utf-8' })
@@ -116,7 +116,7 @@ onMounted(async () => {
       getDocument(id),
       previewDocument(id),
     ])
-    document.value = docRes.data
+    docInfo.value = docRes.data
     rawContent.value = previewRes.data.content || ''
   } catch {
     ElMessage.error('加载文档失败')
