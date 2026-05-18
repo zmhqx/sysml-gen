@@ -1,0 +1,192 @@
+{
+  "elements": [
+    {
+      "element_id": "pkg_1",
+      "element_name": "智能家居系统",
+      "element_type": "Package",
+      "parent_element_id": "",
+      "description": "智能家居系统顶层包"
+    },
+    {
+      "element_id": "req_1",
+      "element_name": "远程控制需求",
+      "element_type": "Requirement",
+      "parent_element_id": "pkg_1",
+      "description": "用户应能通过手机APP远程控制家居设备"
+    },
+    {
+      "element_id": "req_2",
+      "element_name": "自动化调度需求",
+      "element_type": "Requirement",
+      "parent_element_id": "pkg_1",
+      "description": "系统应支持定时任务和场景联动自动化调度"
+    },
+    {
+      "element_id": "req_3",
+      "element_name": "安全认证需求",
+      "element_type": "Requirement",
+      "parent_element_id": "pkg_1",
+      "description": "用户访问需经过身份认证，通信数据需加密传输"
+    },
+    {
+      "element_id": "req_4",
+      "element_name": "数据存储需求",
+      "element_type": "Requirement",
+      "parent_element_id": "pkg_1",
+      "description": "系统应支持设备状态数据的历史记录与查询"
+    },
+    {
+      "element_id": "blk_1",
+      "element_name": "中央控制器",
+      "element_type": "Block",
+      "parent_element_id": "pkg_1",
+      "description": "智能家居系统的中央处理单元，负责设备协调与逻辑调度",
+      "attributes": {
+        "处理器": "ARM Cortex-A72",
+        "内存": "4GB RAM",
+        "存储": "32GB eMMC"
+      }
+    },
+    {
+      "element_id": "blk_2",
+      "element_name": "智能灯控模块",
+      "element_type": "Block",
+      "parent_element_id": "pkg_1",
+      "description": "控制灯光开关、亮度调节和色温变化",
+      "attributes": {
+        "协议": "Zigbee 3.0",
+        "最大负载": "200W"
+      }
+    },
+    {
+      "element_id": "blk_3",
+      "element_name": "智能门锁",
+      "element_type": "Block",
+      "parent_element_id": "pkg_1",
+      "description": "支持指纹、密码、手机蓝牙和远程开锁",
+      "attributes": {
+        "认证方式": "指纹/密码/蓝牙",
+        "供电": "4节AA电池"
+      }
+    },
+    {
+      "element_id": "blk_4",
+      "element_name": "温湿度传感器",
+      "element_type": "Block",
+      "parent_element_id": "pkg_1",
+      "description": "实时采集室内温湿度数据",
+      "attributes": {
+        "温度精度": "±0.3°C",
+        "湿度精度": "±2%"
+      }
+    },
+    {
+      "element_id": "blk_5",
+      "element_name": "手机APP",
+      "element_type": "Block",
+      "parent_element_id": "pkg_1",
+      "description": "用户移动端控制界面，支持 iOS 和 Android",
+      "attributes": {
+        "平台": "iOS 15+ / Android 12+",
+        "通信": "HTTPS + WebSocket"
+      }
+    },
+    {
+      "element_id": "blk_6",
+      "element_name": "云服务平台",
+      "element_type": "Block",
+      "parent_element_id": "pkg_1",
+      "description": "提供设备管理、数据存储和远程访问服务",
+      "attributes": {
+        "部署": "阿里云 ECS",
+        "数据库": "MySQL + Redis"
+      }
+    },
+    {
+      "element_id": "intf_1",
+      "element_name": "控制指令接口",
+      "element_type": "Interface",
+      "parent_element_id": "blk_2",
+      "description": "定义灯控模块的控制指令集"
+    },
+    {
+      "element_id": "intf_2",
+      "element_name": "传感器数据接口",
+      "element_type": "Interface",
+      "parent_element_id": "blk_4",
+      "description": "定义传感器数据上报格式"
+    }
+  ],
+  "relationships": [
+    {
+      "source_element_id": "blk_1",
+      "target_element_id": "blk_2",
+      "relationship_type": "Composition",
+      "relationship_name": "控制连接",
+      "description": "中央控制器通过Zigbee协议控制智能灯控模块"
+    },
+    {
+      "source_element_id": "blk_1",
+      "target_element_id": "blk_3",
+      "relationship_type": "Composition",
+      "relationship_name": "控制连接",
+      "description": "中央控制器通过蓝牙管理智能门锁"
+    },
+    {
+      "source_element_id": "blk_1",
+      "target_element_id": "blk_4",
+      "relationship_type": "Composition",
+      "relationship_name": "数据采集",
+      "description": "中央控制器定时轮询温湿度传感器数据"
+    },
+    {
+      "source_element_id": "blk_5",
+      "target_element_id": "blk_6",
+      "relationship_type": "Association",
+      "relationship_name": "API通信",
+      "description": "手机APP通过HTTPS与云服务平台通信"
+    },
+    {
+      "source_element_id": "blk_6",
+      "target_element_id": "blk_1",
+      "relationship_type": "Association",
+      "relationship_name": "远程连接",
+      "description": "云服务平台通过安全隧道连接中央控制器"
+    },
+    {
+      "source_element_id": "req_1",
+      "target_element_id": "blk_5",
+      "relationship_type": "Satisfy",
+      "relationship_name": "满足需求",
+      "description": "手机APP满足远程控制需求"
+    },
+    {
+      "source_element_id": "req_1",
+      "target_element_id": "blk_6",
+      "relationship_type": "Satisfy",
+      "relationship_name": "满足需求",
+      "description": "云服务满足远程控制需求"
+    },
+    {
+      "source_element_id": "req_2",
+      "target_element_id": "blk_1",
+      "relationship_type": "Satisfy",
+      "relationship_name": "满足需求",
+      "description": "中央控制器满足自动化调度需求"
+    },
+    {
+      "source_element_id": "req_3",
+      "target_element_id": "blk_3",
+      "relationship_type": "Satisfy",
+      "relationship_name": "满足需求",
+      "description": "智能门锁满足安全认证需求"
+    },
+    {
+      "source_element_id": "req_4",
+      "target_element_id": "blk_6",
+      "relationship_type": "Satisfy",
+      "relationship_name": "满足需求",
+      "description": "云服务满足数据存储需求"
+    }
+  ]
+}
