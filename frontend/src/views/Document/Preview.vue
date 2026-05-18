@@ -63,9 +63,18 @@ const rawContent = ref('')
 
 const sanitizedContent = computed(() => {
   if (!rawContent.value) return ''
-  return rawContent.value
+  // 移除 script 标签和 on* 事件属性
+  let html = rawContent.value
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
+  // 将 <style> 中的 CSS 选择器加上 .preview-content 前缀，防止泄漏到全局
+  html = html.replace(/<style>([\s\S]*?)<\/style>/gi, (_match, css: string) => {
+    const scoped = css
+      .replace(/\bbody\b/g, '.preview-content')
+      .replace(/\bhtml\b/g, '.preview-content')
+    return `<style>${scoped}</style>`
+  })
+  return html
 })
 
 function statusType(status: string) {

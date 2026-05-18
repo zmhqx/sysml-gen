@@ -179,7 +179,7 @@ def _prepare_html_for_pdf(html: str) -> str:
             "font-family: Helvetica;",
             f"font-family: {_CJK_FONT_NAME};",
         )
-    font_css = f'<style>html {{ font-family: "{_CJK_FONT_NAME}", sans-serif; }}</style>\n'
+    font_css = f'<style>body {{ font-family: "{_CJK_FONT_NAME}", sans-serif !important; }}</style>\n'
     if "</head>" in html:
         return html.replace("</head>", font_css + "</head>")
     elif "<body" in html:
