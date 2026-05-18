@@ -1,4 +1,6 @@
 import os
+import platform
+import re
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -138,56 +140,92 @@ def html_to_docx(html: str, docx_doc):
 
 # ── HTML → PDF 中文支持 ────────────────────────
 
-def _register_cjk_font() -> str | None:
-    """注册系统 CJK 字体到 ReportLab，返回字体名称，失败返回 None。"""
+def _register_cjk_font() -> tuple[str | None, str | None]:
+    """注册系统 CJK 字体到 ReportLab，返回 (字体名, 字体路径)。"""
     import os.path as osp
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     font_candidates = [
-        ("C:/Windows/Fonts/simhei.ttf", "SimHei"),
         ("C:/Windows/Fonts/msyh.ttf", "Microsoft YaHei"),
+        ("C:/Windows/Fonts/simhei.ttf", "SimHei"),
         ("C:/Windows/Fonts/msyh.ttc", "Microsoft YaHei"),
         ("C:/Windows/Fonts/simsun.ttc", "SimSun"),
         ("C:/Windows/Fonts/simkai.ttf", "KaiTi"),
         ("C:/Windows/Fonts/fangsong.ttf", "FangSong"),
+        # Linux 常见路径
+        ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", "WQY Micro Hei"),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", "Noto Sans CJK"),
+        ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", "Noto Sans CJK"),
+        # macOS
+        ("/System/Library/Fonts/PingFang.ttc", "PingFang"),
+        ("/System/Library/Fonts/STHeiti Light.ttc", "STHeiti"),
     ]
     for path, name in font_candidates:
-        if osp.exists(path):
-            try:
+        if not osp.exists(path):
+            continue
+        try:
+            if path.lower().endswith(".ttc"):
+                pdfmetrics.registerFont(TTFont(name, path, subfontIndex=0))
+            else:
                 pdfmetrics.registerFont(TTFont(name, path))
-                return name
-            except Exception:
-                continue
-    return None
+            return name, path
+        except Exception:
+            continue
+    return None, None
 
 
-# 模块加载时注册中文字体
-_CJK_FONT_NAME = _register_cjk_font()
+_CJK_FONT_NAME, _CJK_FONT_PATH = _register_cjk_font()
+_IS_WINDOWS = platform.system() == "Windows"
 
 
-def _prepare_html_for_pdf(html: str) -> str:
-    """注入字体 CSS 到 HTML 中供 xhtml2pdf 使用。"""
+def _configure_xhtml2pdf_fonts() -> None:
+    """将已注册 CJK 字体同步到 xhtml2pdf 默认字体映射。"""
     if not _CJK_FONT_NAME:
-        return html
-    # 将字体注册到 xhtml2pdf 的字体映射表，否则 xhtml2pdf 不认
-    from xhtml2pdf import default
+        return
+    try:
+        from xhtml2pdf import default
+    except ImportError:
+        return
     font_key = _CJK_FONT_NAME.lower()
     if font_key not in default.DEFAULT_FONT:
         default.DEFAULT_FONT[font_key] = _CJK_FONT_NAME
-        # 覆盖 html 默认字体（原为 Helvetica）
         default.DEFAULT_CSS = default.DEFAULT_CSS.replace(
             "font-family: Helvetica;",
             f"font-family: {_CJK_FONT_NAME};",
         )
-    font_css = f'<style>body {{ font-family: "{_CJK_FONT_NAME}", sans-serif !important; }}</style>\n'
+
+
+def _prepare_html_for_pdf(html: str) -> str:
+    """注入 @font-face 与全局字体 CSS，供 xhtml2pdf / WeasyPrint 正确渲染中文。"""
+    if not _CJK_FONT_NAME or not _CJK_FONT_PATH:
+        return html
+    _configure_xhtml2pdf_fonts()
+    # 替换模板中不可用于 PDF 的西文字体声明
+    html = re.sub(
+        r"font-family\s*:\s*[^;}\n]+",
+        f'font-family: "{_CJK_FONT_NAME}", sans-serif',
+        html,
+        flags=re.IGNORECASE,
+    )
+    font_url = _CJK_FONT_PATH.replace("\\", "/")
+    font_css = (
+        f'<style>\n'
+        f'@font-face {{\n'
+        f'  font-family: "{_CJK_FONT_NAME}";\n'
+        f'  src: url("file:///{font_url}");\n'
+        f'}}\n'
+        f'*, body, h1, h2, h3, h4, h5, h6, p, th, td, li, span, div, table {{\n'
+        f'  font-family: "{_CJK_FONT_NAME}", sans-serif !important;\n'
+        f'}}\n'
+        f'</style>\n'
+    )
     if "</head>" in html:
-        return html.replace("</head>", font_css + "</head>")
-    elif "<body" in html:
+        return html.replace("</head>", font_css + "</head>", 1)
+    if "<body" in html:
         idx = html.find("<body")
         idx = html.find(">", idx) + 1
         return html[:idx] + font_css + html[idx:]
-    else:
-        return font_css + html
+    return font_css + html
 
 try:
     from docx import Document as DocxDocument
@@ -385,12 +423,23 @@ def download_document(doc_id: int, fmt: str = "docx",
     elif fmt == "pdf" and (HAS_WEASYPRINT or HAS_XHTML2PDF or HAS_FPDF):
         os.makedirs(settings.document_dir, exist_ok=True)
         filepath = os.path.join(settings.document_dir, f"{doc.document_name}_{doc.id}.pdf")
-        if HAS_WEASYPRINT:
-            HTML(string=doc.content).write_pdf(filepath)
-        elif HAS_XHTML2PDF:
-            pdf_content = _prepare_html_for_pdf(doc.content)
+        pdf_html = _prepare_html_for_pdf(doc.content)
+        # Windows 优先 xhtml2pdf（无需 GTK，中文嵌入更可靠）；其它平台 WeasyPrint 优先
+        use_xhtml2pdf = HAS_XHTML2PDF and (
+            _IS_WINDOWS or not HAS_WEASYPRINT or _CJK_FONT_NAME
+        )
+        if use_xhtml2pdf:
             with open(filepath, "wb") as f:
-                pisa.CreatePDF(pdf_content, dest=f, encoding="utf-8")
+                status = pisa.CreatePDF(pdf_html, dest=f, encoding="utf-8")
+            if status.err:
+                raise HTTPException(status_code=500, detail=f"PDF 生成失败: {status.err}")
+        elif HAS_WEASYPRINT:
+            HTML(string=pdf_html).write_pdf(filepath)
+        elif HAS_XHTML2PDF:
+            with open(filepath, "wb") as f:
+                status = pisa.CreatePDF(pdf_html, dest=f, encoding="utf-8")
+            if status.err:
+                raise HTTPException(status_code=500, detail=f"PDF 生成失败: {status.err}")
         else:
             import re
             clean = re.sub(r'<[^>]+>', '', doc.content)

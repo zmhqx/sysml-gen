@@ -36,6 +36,7 @@ node_modules/
 
 # Binary documents
 *.docx
+*.pdf
 
 # Project instructions
 CLAUDE.md
