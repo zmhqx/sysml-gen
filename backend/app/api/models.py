@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.project_access import require_project_write, require_project_read, require_model_access
 from app.models.user import User, UserRole
 from app.models.project import Project
+from app.models.project_member import ProjectMember
 from app.models.model import SysModel, ModelElement, ModelRelationship, ParseStatus
 from app.schemas.model import (
     ModelOut,
@@ -194,9 +195,11 @@ def list_models(
 ):
     query = db.query(SysModel)
     if current_user.role == UserRole.MEMBER.value:
-        query = query.join(Project, Project.id == SysModel.project_id).filter(
-            Project.owner_id == current_user.id
-        )
+        query = query.outerjoin(ProjectMember, ProjectMember.project_id == SysModel.project_id).join(
+            Project, Project.id == SysModel.project_id
+        ).filter(
+            (Project.owner_id == current_user.id) | (ProjectMember.user_id == current_user.id)
+        ).distinct()
     if project_id is not None:
         require_project_read(db, current_user, project_id)
         query = query.filter(SysModel.project_id == project_id)

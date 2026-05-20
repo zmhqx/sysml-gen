@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.project_access import require_project_write, require_project_read, require_model_access
 from app.models.user import User, UserRole
 from app.models.project import Project
+from app.models.project_member import ProjectMember
 from app.models.document import Document, DocumentStatus
 from app.models.model import SysModel, ModelElement
 from app.models.template import Template
@@ -272,7 +273,11 @@ def list_documents(
         require_project_read(db, current_user, project_id)
         q = q.filter(Document.project_id == project_id)
     elif current_user.role == UserRole.MEMBER.value:
-        q = q.join(Project, Project.id == Document.project_id).filter(Project.owner_id == current_user.id)
+        q = q.outerjoin(ProjectMember, ProjectMember.project_id == Document.project_id).join(
+            Project, Project.id == Document.project_id
+        ).filter(
+            (Project.owner_id == current_user.id) | (ProjectMember.user_id == current_user.id)
+        ).distinct()
     total = q.count()
     rows = (
         q.order_by(Document.created_at.desc())

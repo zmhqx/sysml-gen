@@ -2,6 +2,7 @@
   <div>
     <div class="page-header">
       <h2>用户管理</h2>
+      <el-button type="primary" @click="openCreate">新建用户</el-button>
     </div>
 
     <el-table :data="users" border stripe v-loading="loading">
@@ -39,7 +40,8 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" title="编辑用户" width="500px">
+    <!-- 编辑用户 -->
+    <el-dialog v-model="editDialogVisible" title="编辑用户" width="500px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="用户名">
           <el-input v-model="form.username" disabled />
@@ -68,8 +70,37 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="editDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 新建用户 -->
+    <el-dialog v-model="createDialogVisible" title="新建用户" width="500px">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="80px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="createForm.username" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="createForm.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="姓名" prop="full_name">
+          <el-input v-model="createForm.full_name" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="createForm.email" />
+        </el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="createForm.role" style="width: 100%">
+            <el-option label="管理员" value="admin" />
+            <el-option label="经理" value="manager" />
+            <el-option label="成员" value="member" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="creating" @click="handleCreate">创建</el-button>
       </template>
     </el-dialog>
   </div>
@@ -78,7 +109,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
-import { getAdminUsers, updateAdminUser } from '../../api/admin'
+import { getAdminUsers, updateAdminUser, createAdminUser } from '../../api/admin'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import type { User } from '../../types'
@@ -86,11 +117,12 @@ import type { User } from '../../types'
 const authStore = useAuthStore()
 const users = ref<User[]>([])
 const loading = ref(false)
-const dialogVisible = ref(false)
+
+// 编辑
+const editDialogVisible = ref(false)
 const saving = ref(false)
 const editingId = ref<number | null>(null)
 const formRef = ref<FormInstance>()
-
 const form = reactive({
   username: '',
   full_name: '',
@@ -102,6 +134,22 @@ const rules = {
   email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
 }
 
+// 新建
+const createDialogVisible = ref(false)
+const creating = ref(false)
+const createFormRef = ref<FormInstance>()
+const createForm = reactive({
+  username: '',
+  password: '',
+  full_name: '',
+  email: '',
+  role: 'member',
+})
+const createRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+}
+
 function openEdit(row: User) {
   editingId.value = row.id
   form.username = row.username
@@ -109,7 +157,16 @@ function openEdit(row: User) {
   form.email = row.email
   form.role = row.role
   form.status = row.status as 0 | 1
-  dialogVisible.value = true
+  editDialogVisible.value = true
+}
+
+function openCreate() {
+  createForm.username = ''
+  createForm.password = ''
+  createForm.full_name = ''
+  createForm.email = ''
+  createForm.role = 'member'
+  createDialogVisible.value = true
 }
 
 async function handleSave() {
@@ -124,10 +181,32 @@ async function handleSave() {
       status: form.status,
     })
     ElMessage.success('用户已更新')
-    dialogVisible.value = false
+    editDialogVisible.value = false
     await fetchUsers()
   } finally {
     saving.value = false
+  }
+}
+
+async function handleCreate() {
+  const valid = await createFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  creating.value = true
+  try {
+    await createAdminUser({
+      username: createForm.username,
+      password: createForm.password,
+      full_name: createForm.full_name,
+      email: createForm.email,
+      role: createForm.role,
+    })
+    ElMessage.success('用户已创建')
+    createDialogVisible.value = false
+    await fetchUsers()
+  } catch {
+    // handled by axios interceptor
+  } finally {
+    creating.value = false
   }
 }
 

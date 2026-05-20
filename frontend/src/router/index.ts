@@ -50,6 +50,12 @@ const router = createRouter({
           meta: { title: '模型视图' },
         },
         {
+          path: 'model/:id/editor',
+          name: 'ModelEditor',
+          component: () => import('../views/Model/Editor.vue'),
+          meta: { title: '视图编辑器' },
+        },
+        {
           path: 'template',
           name: 'TemplateList',
           component: () => import('../views/Template/index.vue'),

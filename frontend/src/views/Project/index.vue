@@ -2,7 +2,7 @@
   <div>
     <div class="page-header">
       <h2>项目管理</h2>
-      <el-button type="primary" @click="showForm = true; editData = null">新建项目</el-button>
+      <el-button v-if="isAdminOrManager" type="primary" @click="showForm = true; editData = null">新建项目</el-button>
     </div>
 
     <el-table :data="projectStore.projects" border stripe style="width: 100%">
@@ -13,8 +13,13 @@
         </template>
       </el-table-column>
       <el-table-column prop="description" label="描述" min-width="300" show-overflow-tooltip />
+      <el-table-column label="负责人" width="120">
+        <template #default="{ row }">
+          {{ getUserName(row.owner_id) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="180" />
-      <el-table-column label="操作" width="160">
+      <el-table-column v-if="isAdminOrManager" label="操作" width="160">
         <template #default="{ row }">
           <el-button size="small" @click="showForm = true; editData = row">编辑</el-button>
           <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
@@ -40,20 +45,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useProjectStore } from '../../stores/project'
+import { useAuthStore } from '../../stores/auth'
+import { getAdminUsers } from '../../api/admin'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
+import type { User } from '../../types'
 
 const projectStore = useProjectStore()
+const authStore = useAuthStore()
 const formRef = ref<FormInstance>()
 const showForm = ref(false)
 const saving = ref(false)
 const editData = ref<any>(null)
+const users = ref<User[]>([])
+
+const isAdminOrManager = computed(() =>
+  authStore.user?.role === 'admin' || authStore.user?.role === 'manager'
+)
 
 const form = reactive({ name: '', description: '' })
 const rules = {
   name: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
+}
+
+function getUserName(ownerId: number) {
+  const u = users.value.find((u) => u.id === ownerId)
+  return u?.full_name || u?.username || `ID:${ownerId}`
 }
 
 watch(showForm, (val) => {
@@ -95,7 +114,12 @@ async function handleDelete(id: number) {
   }
 }
 
-onMounted(() => projectStore.fetchAll())
+onMounted(async () => {
+  await Promise.all([
+    projectStore.fetchAll(),
+    getAdminUsers().then((res) => { users.value = res.data }),
+  ])
+})
 </script>
 
 <style scoped>

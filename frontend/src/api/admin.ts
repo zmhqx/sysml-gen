@@ -16,6 +16,16 @@ export function disableAdminUser(id: number) {
   return request.delete(`/admin/users/${id}`)
 }
 
+export function createAdminUser(data: {
+  username: string
+  password: string
+  full_name?: string
+  email?: string
+  role?: string
+}) {
+  return request.post<User>('/admin/users', data)
+}
+
 export function getAdminLogs(params: {
   log_type?: string
   module_name?: string

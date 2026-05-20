@@ -5,20 +5,44 @@ from typing import List, Optional
 from app.database import get_db
 from app.core.deps import get_current_user, require_role
 from app.models.user import User, UserRole
-from app.schemas.user import UserOut, UserUpdate
+from app.core.security import get_password_hash
+from app.schemas.user import UserOut, UserUpdate, AdminUserCreate
 from app.services.log_service import get_logs
 from app.schemas.log import LogOut
 from app.models.project import Project
 from app.models.model import SysModel
 from app.models.document import Document
+from app.models.template import Template
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
 @router.get("/users", response_model=List[UserOut])
 def list_users(db: Session = Depends(get_db),
-               current_user: User = Depends(require_role(UserRole.ADMIN.value))):
+               current_user: User = Depends(get_current_user)):
     return db.query(User).all()
+
+
+@router.post("/users", response_model=UserOut)
+def create_user(user_in: AdminUserCreate,
+                db: Session = Depends(get_db),
+                current_user: User = Depends(require_role(UserRole.ADMIN.value))):
+    if user_in.role not in ("admin", "manager", "member"):
+        raise HTTPException(status_code=400, detail="无效角色")
+    existing = db.query(User).filter(User.username == user_in.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="用户名已存在")
+    user = User(
+        username=user_in.username,
+        password_hash=get_password_hash(user_in.password),
+        full_name=user_in.full_name or "",
+        email=user_in.email or "",
+        role=user_in.role,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.put("/users/{user_id}", response_model=UserOut)
@@ -75,5 +99,6 @@ def get_stats(db: Session = Depends(get_db),
         "user_count": db.query(User).count(),
         "project_count": db.query(Project).count(),
         "model_count": db.query(SysModel).count(),
+        "template_count": db.query(Template).count(),
         "document_count": db.query(Document).count(),
     }

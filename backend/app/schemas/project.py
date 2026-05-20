@@ -23,3 +23,19 @@ class ProjectOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ProjectMemberOut(BaseModel):
+    id: int
+    project_id: int
+    user_id: int
+    username: str
+    full_name: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AddMemberBody(BaseModel):
+    user_id: int

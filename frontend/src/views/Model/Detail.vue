@@ -25,6 +25,7 @@
         <template #header>
           <span>模型元素（{{ elements.length }}）</span>
           <el-button size="small" style="margin-left: 12px" @click="$router.push(`/model/${model.id}/view`)">查看元素树</el-button>
+          <el-button size="small" type="success" style="margin-left: 8px" @click="$router.push(`/model/${model.id}/editor`)">视图编辑器</el-button>
         </template>
         <el-table :data="elements" border stripe style="width: 100%" max-height="400">
           <el-table-column prop="element_id" label="ID" width="100" />

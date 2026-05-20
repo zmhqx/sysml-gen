@@ -41,6 +41,7 @@ export interface ModelElement {
   element_type: string
   parent_element_id: string
   description: string
+  attributes?: Record<string, any>
 }
 
 export interface ElementTreeItem {
@@ -94,4 +95,13 @@ export interface LogOut {
   result_status: string
   ip_address: string
   record_time?: string
+}
+
+export interface ProjectMember {
+  id: number
+  project_id: number
+  user_id: number
+  username: string
+  full_name: string
+  created_at?: string
 }

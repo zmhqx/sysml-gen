@@ -1,5 +1,5 @@
 import request from './index'
-import type { Project } from '../types'
+import type { Project, ProjectMember } from '../types'
 
 export function getProjects() {
   return request.get<Project[]>('/projects')
@@ -19,4 +19,16 @@ export function updateProject(id: number, data: Partial<Project>) {
 
 export function deleteProject(id: number) {
   return request.delete(`/projects/${id}`)
+}
+
+export function getProjectMembers(projectId: number) {
+  return request.get<ProjectMember[]>(`/projects/${projectId}/members`)
+}
+
+export function addProjectMember(projectId: number, userId: number) {
+  return request.post<ProjectMember>(`/projects/${projectId}/members`, { user_id: userId })
+}
+
+export function removeProjectMember(projectId: number, userId: number) {
+  return request.delete(`/projects/${projectId}/members/${userId}`)
 }

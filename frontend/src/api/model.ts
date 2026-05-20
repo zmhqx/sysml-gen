@@ -27,3 +27,7 @@ export function getModelTree(modelId: number) {
 export function getModelElements(modelId: number) {
   return request.get<ModelElement[]>(`/models/${modelId}/elements`)
 }
+
+export function updateElement(modelId: number, elementId: string, data: { element_name?: string; description?: string }) {
+  return request.put<ModelElement>(`/models/${modelId}/elements/${elementId}`, data)
+}

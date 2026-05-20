@@ -43,3 +43,11 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
     role: Optional[str] = None
     status: Optional[int] = None
+
+
+class AdminUserCreate(BaseModel):
+    username: str
+    password: str
+    full_name: Optional[str] = ""
+    email: Optional[str] = ""
+    role: str = "member"
