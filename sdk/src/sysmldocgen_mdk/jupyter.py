@@ -385,3 +385,8 @@ def register_magics():
     ip = get_ipython()
     if ip is not None:
         ip.register_magics(SysMLDocGenMagics)
+
+
+def load_ipython_extension(ip):
+    """IPython 扩展入口 — 支持 %load_ext sysmldocgen_mdk 加载。"""
+    ip.register_magics(SysMLDocGenMagics)
