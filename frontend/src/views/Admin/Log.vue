@@ -1,10 +1,10 @@
 <template>
-  <div>
+  <div class="page-container">
     <div class="page-header">
       <h2>日志管理</h2>
     </div>
 
-    <el-card style="margin-bottom: 16px">
+    <el-card shadow="never" style="margin-bottom: 16px">
       <el-form :inline="true" :model="filters">
         <el-form-item label="日志类型">
           <el-select v-model="filters.log_type" placeholder="全部" clearable style="width: 140px">
@@ -38,7 +38,8 @@
       </el-form>
     </el-card>
 
-    <el-table :data="logs" border stripe v-loading="loading">
+    <div class="card-table">
+    <el-table :data="logs" stripe v-loading="loading">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="log_type" label="类型" width="80">
         <template #default="{ row }">
@@ -62,17 +63,17 @@
       <el-table-column prop="ip_address" label="IP" width="140" />
       <el-table-column prop="record_time" label="时间" width="180" />
     </el-table>
-
-    <div style="display: flex; justify-content: center; margin-top: 20px">
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.page_size"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="pagination.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="fetchLogs"
-        @current-change="fetchLogs"
-      />
+      <div style="display: flex; justify-content: center; padding: 16px 0">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.page_size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="fetchLogs"
+          @current-change="fetchLogs"
+        />
+      </div>
     </div>
   </div>
 </template>

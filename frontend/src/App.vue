@@ -16,10 +16,8 @@ const authReady = ref(false)
 onMounted(async () => {
   if (authStore.token) {
     await authStore.fetchUser()
-    // fetchUser 失败会调用 logout() 清除 token，此时跳转登录
     if (!authStore.token) {
       router.replace('/login')
-      return
     }
   }
   authReady.value = true

@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <div class="page-container">
     <div class="page-header">
       <h2>项目管理</h2>
       <el-button v-if="isAdminOrManager" type="primary" @click="showForm = true; editData = null">新建项目</el-button>
     </div>
 
-    <el-table :data="projectStore.projects" border stripe style="width: 100%">
+    <div class="card-table">
+    <el-table :data="projectStore.projects" stripe style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="项目名称" min-width="200">
         <template #default="{ row }">
@@ -26,6 +27,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <el-dialog v-model="showForm" :title="editData ? '编辑项目' : '新建项目'" width="500px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">

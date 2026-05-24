@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <div class="page-container">
     <div class="page-header">
       <h2>模型管理</h2>
       <el-button type="primary" @click="showUpload = true">上传模型</el-button>
     </div>
 
-    <el-table :data="models" border stripe style="width: 100%">
+    <div class="card-table">
+    <el-table :data="models" stripe style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="模型名称" min-width="200">
         <template #default="{ row }">
@@ -38,6 +39,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <el-dialog v-model="showUpload" title="上传模型" width="500px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">

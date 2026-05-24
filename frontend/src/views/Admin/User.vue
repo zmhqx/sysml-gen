@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <div class="page-container">
     <div class="page-header">
       <h2>用户管理</h2>
       <el-button type="primary" @click="openCreate">新建用户</el-button>
     </div>
 
-    <el-table :data="users" border stripe v-loading="loading">
+    <div class="card-table">
+    <el-table :data="users" stripe v-loading="loading">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="username" label="用户名" width="140" />
       <el-table-column prop="full_name" label="姓名" width="140" />
@@ -39,6 +40,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <!-- 编辑用户 -->
     <el-dialog v-model="editDialogVisible" title="编辑用户" width="500px">
