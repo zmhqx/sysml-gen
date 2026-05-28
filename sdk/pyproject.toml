@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sysmldocgen-mdk"
+version = "0.1.0"
+description = "基于SysML模型的文档自动生成系统 - Jupyter MDK开发工具包"
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.28",
+    "pandas>=1.5",
+    "matplotlib>=3.6",
+    "jinja2>=3.1",
+    "deepdiff>=6.0",
+    "ipython>=8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/example/sysmldocgen"
+
+[tool.setuptools.packages.find]
+where = ["src"]
