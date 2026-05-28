@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -78,7 +79,14 @@ def delete_user(user_id: int, db: Session = Depends(get_db),
     return {"detail": "User disabled"}
 
 
-@router.get("/logs", response_model=dict)
+class LogListResponse(BaseModel):
+    items: List[LogOut]
+    total: int
+    page: int
+    page_size: int
+
+
+@router.get("/logs", response_model=LogListResponse)
 def list_logs(
     log_type: Optional[str] = Query(None),
     module_name: Optional[str] = Query(None),
@@ -88,8 +96,9 @@ def list_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ADMIN.value)),
 ):
-    items, total = get_logs(db, log_type, module_name, result_status, page, page_size)
-    return {"items": items, "total": total, "page": page, "page_size": page_size}
+    rows, total = get_logs(db, log_type, module_name, result_status, page, page_size)
+    items = [LogOut.model_validate(row) for row in rows]
+    return LogListResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/stats")

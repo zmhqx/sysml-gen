@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-fill">
     <div class="page-header">
       <h2>文档管理</h2>
       <div>
@@ -21,7 +21,8 @@
       </div>
     </div>
 
-    <el-table :data="documents" border stripe v-loading="loading">
+    <div class="page-content-card table-fill">
+    <el-table :data="documents" stripe v-loading="loading" style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="document_name" label="文档名称" min-width="200">
         <template #default="{ row }">
@@ -43,6 +44,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <div style="display: flex; justify-content: center; margin-top: 20px">
       <el-pagination
@@ -121,11 +123,3 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-</style>

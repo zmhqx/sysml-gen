@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <div class="page-fill">
     <div class="page-header">
       <h2>模板管理</h2>
       <el-button type="primary" @click="openCreate">新建模板</el-button>
     </div>
 
-    <el-table :data="templates" border stripe v-loading="loading">
+    <div class="page-content-card table-fill">
+    <el-table :data="templates" stripe v-loading="loading" style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="模板名称" min-width="160" />
       <el-table-column prop="template_type" label="模板类型" width="140">
@@ -37,6 +38,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑模板' : '新建模板'" width="750px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
@@ -213,12 +215,6 @@ onMounted(fetchTemplates)
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
 .el-textarea :deep(textarea) {
   font-family: 'Courier New', Courier, monospace;
   font-size: 13px;
