@@ -40,20 +40,3 @@ node_modules/
 
 # Project instructions
 CLAUDE.md
-
-# 本地环境（勿提交）
-database/my.ini
-
-# 离线文档生成 / 学习笔记（非运行必需）
-backend/scripts/generate_*.py
-backend/scripts/body_expand.py
-backend/scripts/docx_style.py
-backend/scripts/demo_test.py
-backend/scripts/gen_test_cases_md.py
-backend/scripts/merge_doc_signatures.py
-backend/scripts/extract_ref_doc.ps1
-docs/
-模板/
-*学习手册*.md
-*导读*.md
-frontend/.env.local
