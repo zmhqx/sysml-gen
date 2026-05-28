@@ -2,7 +2,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '../router'
 
-export const apiOrigin = 'http://localhost:8000'
+export const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'http://localhost:8000'
 export const swaggerDocsUrl = `${apiOrigin}/docs`
 const baseURL = `${apiOrigin}/api/v1`
 
