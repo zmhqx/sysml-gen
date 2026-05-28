@@ -4,7 +4,7 @@
       <h2>生成文档</h2>
     </div>
 
-    <el-card style="max-width: 600px; margin: 20px auto">
+    <el-card class="generate-card">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="选择项目" prop="project_id">
           <el-select
@@ -153,10 +153,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+.generate-card {
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: var(--app-radius-lg);
 }
 </style>

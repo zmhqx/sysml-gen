@@ -1,12 +1,12 @@
 <template>
-  <div class="page-container">
+  <div class="page-fill">
     <div class="page-header">
       <h2>模板管理</h2>
       <el-button type="primary" @click="openCreate">新建模板</el-button>
     </div>
 
-    <div class="card-table">
-    <el-table :data="templates" stripe v-loading="loading">
+    <div class="page-content-card table-fill">
+    <el-table :data="templates" stripe v-loading="loading" style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="模板名称" min-width="160" />
       <el-table-column prop="template_type" label="模板类型" width="140">
@@ -215,12 +215,6 @@ onMounted(fetchTemplates)
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
 .el-textarea :deep(textarea) {
   font-family: 'Courier New', Courier, monospace;
   font-size: 13px;

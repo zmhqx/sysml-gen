@@ -2,12 +2,32 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '../router'
 
-const baseURL = 'http://localhost:8000/api/v1'
+export const apiOrigin = 'http://localhost:8000'
+export const swaggerDocsUrl = `${apiOrigin}/docs`
+const baseURL = `${apiOrigin}/api/v1`
 
 const request = axios.create({
   baseURL,
   timeout: 30000,
 })
+
+/** 将接口错误转为用户可读的中文提示 */
+function formatErrorMessage(error: {
+  response?: { status?: number; data?: { detail?: unknown } }
+  message?: string
+}): string {
+  if (!error.response) {
+    return '网络连接失败，请确认后端已启动（http://localhost:8000）'
+  }
+  const { status, data } = error.response
+  const detail = data?.detail
+  if (typeof detail === 'string') return detail
+  if (status === 403) return '没有权限执行此操作'
+  if (status === 404) return '请求的资源不存在'
+  if (status === 500) return '服务器内部错误，请联系管理员或查看后端日志'
+  if (status === 422) return '请求参数不正确'
+  return error.message || '请求失败'
+}
 
 let isRefreshing = false
 
@@ -68,9 +88,9 @@ request.interceptors.response.use(
       router.push('/login')
     }
 
-    const msg = error.response?.data?.detail || error.message || 'Request failed'
+    const msg = formatErrorMessage(error)
     if (status !== 401 || !original?._retry) {
-      ElMessage.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+      ElMessage.error(msg)
     }
     return Promise.reject(error)
   },

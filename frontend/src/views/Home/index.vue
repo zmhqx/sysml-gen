@@ -1,123 +1,76 @@
 <template>
   <div class="home-page">
-    <!-- 统计指标卡 -->
-    <el-row :gutter="20">
-      <el-col :span="6" v-for="item in metrics" :key="item.label">
-        <el-card shadow="never" class="metric-card">
-          <div class="metric-inner">
-            <div class="metric-icon" :style="{ background: item.bg }">
-              <el-icon :size="22"><component :is="item.icon" /></el-icon>
-            </div>
-            <div class="metric-body">
-              <div class="metric-value">{{ item.count }}</div>
-              <div class="metric-label">{{ item.label }}</div>
-            </div>
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h2>欢迎回来，{{ displayName }}</h2>
+        <p>在这里查看系统运行概况，并快速进入项目管理、模型解析与文档生成流程。</p>
+      </div>
+      <div class="welcome-actions">
+        <el-button type="primary" size="large" @click="$router.push('/document/generate')">
+          <el-icon class="btn-icon"><DocumentAdd /></el-icon>
+          生成文档
+        </el-button>
+        <el-button size="large" @click="$router.push('/model')">上传模型</el-button>
+      </div>
+    </div>
+
+    <el-row :gutter="20" class="stat-row">
+      <el-col v-for="item in statItems" :key="item.key" :xs="24" :sm="12" :lg="6">
+        <div class="metric-card" :class="item.theme" @click="item.route && $router.push(item.route)">
+          <div class="metric-icon">
+            <el-icon :size="26"><component :is="item.icon" /></el-icon>
           </div>
-          <div class="metric-trend" v-if="item.trend !== undefined">
-            <span :class="item.trend >= 0 ? 'trend-up' : 'trend-down'">
-              {{ item.trend >= 0 ? '+' : '' }}{{ item.trend }}%
-            </span>
-            <span class="trend-period">较上月</span>
+          <div class="metric-body">
+            <div class="metric-value">{{ stats[item.key as keyof typeof stats] }}</div>
+            <div class="metric-label">{{ item.label }}</div>
           </div>
-        </el-card>
+          <div class="metric-arrow">
+            <el-icon><ArrowRight /></el-icon>
+          </div>
+        </div>
       </el-col>
     </el-row>
 
-    <!-- 图表 + 快捷操作 -->
-    <el-row :gutter="20" style="margin-top: 20px">
-      <el-col :span="16">
-        <el-card shadow="never">
+    <el-row :gutter="20" class="content-row">
+      <el-col :xs="24" :lg="14">
+        <el-card class="panel-card">
           <template #header>
-            <div class="card-header">
-              <span>近 30 天文档生成量</span>
+            <div class="card-header-row">
+              <span>快捷操作</span>
             </div>
           </template>
-          <div class="chart-placeholder">
-            <div class="chart-bars">
-              <div
-                v-for="(v, i) in chartData"
-                :key="i"
-                class="chart-bar-item"
-              >
-                <div
-                  class="chart-bar"
-                  :style="{ height: (v / maxChart) * 160 + 'px' }"
-                ></div>
-                <div class="chart-label">{{ i + 1 }}日</div>
+          <div class="quick-grid">
+            <div
+              v-for="action in quickActions"
+              :key="action.title"
+              class="quick-item"
+              @click="$router.push(action.route)"
+            >
+              <div class="quick-icon" :style="{ background: action.bg }">
+                <el-icon :size="22" :style="{ color: action.color }">
+                  <component :is="action.icon" />
+                </el-icon>
+              </div>
+              <div class="quick-info">
+                <div class="quick-title">{{ action.title }}</div>
+                <div class="quick-desc">{{ action.desc }}</div>
               </div>
             </div>
           </div>
         </el-card>
       </el-col>
 
-      <el-col :span="8">
-        <el-card shadow="never">
+      <el-col :xs="24" :lg="10">
+        <el-card class="panel-card workflow-card">
           <template #header>
-            <div class="card-header">
-              <span>快捷操作</span>
-            </div>
+            <span>典型工作流</span>
           </template>
-          <div class="quick-actions">
-            <el-button
-              type="primary"
-              class="action-btn"
-              @click="$router.push('/project')"
-            >
-              <el-icon><Folder /></el-icon>
-              项目管理
-            </el-button>
-            <el-button
-              class="action-btn"
-              @click="$router.push('/model')"
-            >
-              <el-icon><Collection /></el-icon>
-              模型管理
-            </el-button>
-            <el-button
-              type="success"
-              class="action-btn"
-              @click="$router.push('/document/generate')"
-            >
-              <el-icon><Files /></el-icon>
-              生成文档
-            </el-button>
-            <el-button
-              class="action-btn"
-              @click="$router.push('/template')"
-            >
-              <el-icon><Document /></el-icon>
-              模板管理
-            </el-button>
-          </div>
-        </el-card>
-
-        <!-- 系统信息 -->
-        <el-card shadow="never" style="margin-top: 16px">
-          <template #header>
-            <div class="card-header">
-              <span>系统信息</span>
-            </div>
-          </template>
-          <div class="sys-info">
-            <div class="info-row">
-              <span class="info-label">登录用户</span>
-              <span class="info-value">
-                {{ authStore.user?.full_name || authStore.user?.username }}
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">角色</span>
-              <span class="info-value">
-                <el-tag :type="roleTagType" size="small" effect="plain">
-                  {{ roleLabel }}
-                </el-tag>
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">系统版本</span>
-              <span class="info-value">v1.0.0</span>
-            </div>
-          </div>
+          <el-steps direction="vertical" :active="4" finish-status="success">
+            <el-step title="创建或选择项目" description="在项目管理中建立工作空间" />
+            <el-step title="上传并解析 SysML 模型" description="支持 XMI / XML / JSON，自动解析元素" />
+            <el-step title="选择或编辑文档模板" description="Jinja2 模板驱动 HTML 文档" />
+            <el-step title="生成并导出文档" description="预览后导出 Word 或 PDF" />
+          </el-steps>
         </el-card>
       </el-col>
     </el-row>
@@ -129,9 +82,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import request from '../../api'
 import {
-  Folder, Collection, Document, Files, Tickets, DataAnalysis, EditPen, ChatDotSquare,
+  Folder,
+  Collection,
+  Memo,
+  Files,
+  ArrowRight,
+  DocumentAdd,
+  Upload,
+  EditPen,
+  View,
 } from '@element-plus/icons-vue'
-import type { Component } from 'vue'
 
 const authStore = useAuthStore()
 
@@ -142,173 +102,281 @@ const stats = ref({
   document_count: 0,
 })
 
-const chartData = ref<number[]>([])
+const displayName = computed(
+  () => authStore.user?.full_name || authStore.user?.username || '用户',
+)
 
-interface MetricItem {
-  label: string
-  count: number
-  icon: Component
-  bg: string
-  trend?: number
-}
+const statItems = [
+  { key: 'project_count', label: '项目数量', icon: Folder, theme: 'theme-indigo', route: '/project' },
+  { key: 'model_count', label: '模型数量', icon: Collection, theme: 'theme-purple', route: '/model' },
+  { key: 'template_count', label: '模板数量', icon: Memo, theme: 'theme-blue', route: '/template' },
+  { key: 'document_count', label: '文档数量', icon: Files, theme: 'theme-violet', route: '/document' },
+]
 
-const metrics = computed<MetricItem[]>(() => [
-  { label: '项目数量', count: stats.value.project_count, icon: Folder, bg: '#eef2ff', trend: 12 },
-  { label: '模型数量', count: stats.value.model_count, icon: DataAnalysis, bg: '#f0fdf4', trend: 8 },
-  { label: '模板数量', count: stats.value.template_count, icon: EditPen, bg: '#fefce8', trend: -3 },
-  { label: '文档数量', count: stats.value.document_count, icon: Tickets, bg: '#fdf2ff', trend: 25 },
-])
-
-const maxChart = computed(() => Math.max(...chartData.value, 1))
-
-const roleLabel = computed(() => {
-  const map: Record<string, string> = { admin: '管理员', manager: '经理', member: '成员' }
-  return map[authStore.user?.role || ''] || ''
-})
-const roleTagType = computed(() => {
-  const map: Record<string, string> = { admin: 'danger', manager: 'warning', member: 'info' }
-  return map[authStore.user?.role || ''] || 'info'
-})
+const quickActions = [
+  {
+    title: '项目管理',
+    desc: '创建项目、管理成员',
+    route: '/project',
+    icon: Folder,
+    bg: '#eef2ff',
+    color: '#4f46e5',
+  },
+  {
+    title: '上传模型',
+    desc: '导入 XMI 并解析',
+    route: '/model',
+    icon: Upload,
+    bg: '#f5f3ff',
+    color: '#8b5cf6',
+  },
+  {
+    title: '编辑模板',
+    desc: '维护文档版式',
+    route: '/template',
+    icon: EditPen,
+    bg: '#eff6ff',
+    color: '#2563eb',
+  },
+  {
+    title: '文档列表',
+    desc: '预览与导出',
+    route: '/document',
+    icon: View,
+    bg: '#fdf4ff',
+    color: '#9333ea',
+  },
+]
 
 onMounted(async () => {
   try {
     const res = await request.get('/admin/stats')
     stats.value = res.data
-  } catch { /* ok */ }
-
-  // 模拟近 30 天文档生成趋势
-  chartData.value = Array.from({ length: 30 }, () =>
-    Math.floor(Math.random() * 8) + 1
-  )
+  } catch {
+    // 非管理员可能无 stats 接口，保持 0
+  }
 })
 </script>
 
 <style scoped>
-/* 首页容器防文本光标 */
 .home-page {
-  user-select: none;
-  -webkit-user-select: none;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
-/* 指标卡 */
+
+.welcome-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  border-radius: var(--app-radius-lg);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(79, 70, 229, 0.35);
+}
+
+.welcome-text h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.welcome-text p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.welcome-actions .el-button--primary {
+  background: #fff;
+  border-color: #fff;
+  color: var(--app-primary);
+  font-weight: 600;
+}
+
+.welcome-actions .el-button--primary:hover {
+  background: #f9fafb;
+  border-color: #f9fafb;
+  color: var(--app-primary-hover);
+}
+
+.welcome-actions .el-button:not(.el-button--primary) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.welcome-actions .el-button:not(.el-button--primary):hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-icon {
+  margin-right: 6px;
+}
+
+.stat-row {
+  margin-bottom: 24px;
+}
+
 .metric-card {
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important;
-}
-.metric-inner {
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-card);
+  box-shadow: var(--app-shadow);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid transparent;
 }
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+}
+
 .metric-icon {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.theme-indigo .metric-icon {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+}
+
+.theme-purple .metric-icon {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+}
+
+.theme-blue .metric-icon {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+.theme-violet .metric-icon {
+  background: linear-gradient(135deg, #9333ea, #a855f7);
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--app-text);
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--app-text-secondary);
+  margin-top: 6px;
+}
+
+.metric-arrow {
+  margin-left: auto;
+  color: #d1d5db;
+}
+
+.metric-card:hover .metric-arrow {
+  color: var(--app-primary);
+}
+
+.content-row {
+  flex: 1;
+}
+
+.content-row .el-col {
+  display: flex;
+}
+
+.content-row .panel-card {
+  flex: 1;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.panel-card {
+  margin-bottom: 20px;
+}
+
+.card-header-row {
+  font-weight: 600;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quick-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--app-radius);
+  border: 1px solid var(--app-border);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.quick-item:hover {
+  background: #f9fafb;
+  border-color: #c7d2fe;
+}
+
+.quick-icon {
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary);
   flex-shrink: 0;
 }
-.metric-body {
-  flex: 1;
+
+.quick-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--app-text);
 }
-.metric-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-.metric-label {
-  font-size: 13px;
-  color: var(--text-secondary);
+
+.quick-desc {
+  font-size: 12px;
+  color: var(--app-text-secondary);
   margin-top: 2px;
 }
-.metric-trend {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-}
-.trend-up { color: var(--status-success); font-weight: 600; }
-.trend-down { color: var(--status-danger); font-weight: 600; }
-.trend-period { color: var(--text-muted); margin-left: 4px; }
 
-/* 图表 */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.workflow-card :deep(.el-step__title) {
+  font-size: 14px;
   font-weight: 600;
-  font-size: 15px;
-}
-.chart-placeholder {
-  height: 200px;
-  display: flex;
-  align-items: flex-end;
-}
-.chart-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  width: 100%;
-  height: 100%;
-}
-.chart-bar-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-  justify-content: flex-end;
-}
-.chart-bar {
-  width: 100%;
-  max-width: 24px;
-  background: linear-gradient(180deg, var(--primary), var(--accent-purple));
-  border-radius: 4px 4px 0 0;
-  min-height: 4px;
-  transition: height 0.4s ease;
-}
-.chart-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 4px;
 }
 
-/* 快捷操作 */
-.quick-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.action-btn {
-  width: 100%;
-  justify-content: flex-start;
-  padding: 12px 16px;
-  height: auto;
-}
-
-/* 系统信息 */
-.sys-info {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.info-label {
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-.info-value {
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
+.workflow-card :deep(.el-step__description) {
+  font-size: 12px;
 }
 </style>

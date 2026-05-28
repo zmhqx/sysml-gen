@@ -1,10 +1,6 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h2>日志管理</h2>
-    </div>
-
-    <el-card shadow="never" style="margin-bottom: 16px">
+  <div class="page-fill">
+    <el-card class="page-toolbar-card">
       <el-form :inline="true" :model="filters">
         <el-form-item label="日志类型">
           <el-select v-model="filters.log_type" placeholder="全部" clearable style="width: 140px">
@@ -38,8 +34,8 @@
       </el-form>
     </el-card>
 
-    <div class="card-table">
-    <el-table :data="logs" stripe v-loading="loading">
+    <div class="page-content-card table-fill">
+    <el-table :data="logs" stripe v-loading="loading" style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="log_type" label="类型" width="80">
         <template #default="{ row }">
@@ -63,23 +59,25 @@
       <el-table-column prop="ip_address" label="IP" width="140" />
       <el-table-column prop="record_time" label="时间" width="180" />
     </el-table>
-      <div style="display: flex; justify-content: center; padding: 16px 0">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.page_size"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchLogs"
-          @current-change="fetchLogs"
-        />
-      </div>
+    </div>
+
+    <div style="display: flex; justify-content: center; margin-top: 20px">
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.page_size"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="pagination.total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="fetchLogs"
+        @current-change="fetchLogs"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { getAdminLogs } from '../../api/admin'
 import type { LogOut } from '../../types'
 
@@ -120,12 +118,22 @@ async function fetchLogs() {
   loading.value = true
   try {
     const res = await getAdminLogs({
-      ...filters,
+      log_type: filters.log_type,
+      module_name: filters.module_name,
+      result_status: filters.result_status,
       page: pagination.page,
       page_size: pagination.page_size,
     })
     logs.value = res.data.items
     pagination.total = res.data.total
+  } catch (e: unknown) {
+    logs.value = []
+    pagination.total = 0
+    const err = e as { response?: { status?: number; data?: { detail?: string } } }
+    if (err.response?.status === 403) {
+      ElMessage.error('仅管理员可查看系统日志')
+    }
+    // 其它错误由 axios 拦截器提示
   } finally {
     loading.value = false
   }
@@ -146,12 +154,3 @@ function handleReset() {
 
 onMounted(fetchLogs)
 </script>
-
-<style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-</style>

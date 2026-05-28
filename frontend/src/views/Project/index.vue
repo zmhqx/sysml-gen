@@ -1,11 +1,11 @@
 <template>
-  <div class="page-container">
+  <div class="page-fill">
     <div class="page-header">
       <h2>项目管理</h2>
       <el-button v-if="isAdminOrManager" type="primary" @click="showForm = true; editData = null">新建项目</el-button>
     </div>
 
-    <div class="card-table">
+    <div class="page-content-card table-fill">
     <el-table :data="projectStore.projects" stripe style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="项目名称" min-width="200">
@@ -124,11 +124,3 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-</style>

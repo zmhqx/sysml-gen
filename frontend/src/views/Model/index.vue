@@ -1,11 +1,11 @@
 <template>
-  <div class="page-container">
+  <div class="page-fill">
     <div class="page-header">
       <h2>模型管理</h2>
       <el-button type="primary" @click="showUpload = true">上传模型</el-button>
     </div>
 
-    <div class="card-table">
+    <div class="page-content-card table-fill">
     <el-table :data="models" stripe style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" />
       <el-table-column prop="name" label="模型名称" min-width="200">
@@ -176,11 +176,3 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-</style>
